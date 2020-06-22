@@ -3,18 +3,164 @@ import java.lang.Integer.max
 import kotlin.math.min
 import kotlin.random.Random
 
+enum class MINESOPERATING() {;  // used to handle main menu and choose default values
+    companion object {
+        val greetMes = "How many mines do you want on the field? "
+        val wrongInput = "Wrong Input, try again."
+        var input = listOf("")
+        var mine = "X"
+        var safe = "/"
+        var height = 9  // won't scale if more than 9
+        var width = 9   // won't scale if more than 9
+        var minesNumber: Int = 0
+        var unrevealedCell = "."
+        var markedCell = "*"
+        var status = "running"
+        var gameType = 0 // "gg" for type 1, 0 by default
+        var bigVisual = false
+
+        fun askForMineNum() {
+            print(greetMes)
+            input = readLine()!!.split(" ")
+            when {
+                isN(input[0]) -> { minesNumber = if (input[0].toInt() < height * width - 9) input[0].toInt() else height * width - 9 }
+                else -> {
+                    println(wrongInput)
+                    askForMineNum() }
+            }
+        }
+        fun startGame() {
+            val nf = PlayField(mine, safe, width, height, minesNumber, unrevealedCell, markedCell, bigVisual)
+            nf.start()
+        }
+        fun isN(string: String): Boolean {//  check if it is a Number
+            return string.matches("-?\\d+(\\.\\d+)?".toRegex())
+        }
+        fun gg() {
+            fun askForMineSymb() {
+                print("What symbol do u want to use as Mine Symbol: ")
+                input = readLine()!!.split(" ")
+                when {
+                    input[0].length == 1 -> {mine = input[0]}
+                    else -> {
+                        println(wrongInput)
+                        askForMineSymb()}
+                }
+            }
+            fun askForSafeCell() {
+                print("What symbol do u want to use as SafeCell Symbol: ")
+                input = readLine()!!.split(" ")
+                when {
+                    input[0].length == 1 -> { safe = input[0]}
+                    else -> {
+                        println(wrongInput)
+                        askForSafeCell() }
+                }
+            }
+            fun askForUnrevealedCell() {
+                print("What symbol do u want to use as UnrevealedCell Symbol: ")
+                input = readLine()!!.split(" ")
+                when {
+                    input[0].length == 1 -> { unrevealedCell = input[0]}
+                    else -> {
+                        println(wrongInput)
+                        askForUnrevealedCell() }
+                }
+            }
+            fun askForMarkedCell() {
+                print("What symbol do u want to use as MarkedCell Symbol: ")
+                input = readLine()!!.split(" ")
+                when {
+                    input[0].length == 1 -> { markedCell = input[0]}
+                    else -> {
+                        println(wrongInput)
+                        askForMarkedCell() }
+                }
+            }
+            fun askForWidth() {
+                print("Width > How wide playfield do you want : ")
+                input = readLine()!!.split(" ")
+                when {
+                    isN(input[0]) -> { width = input[0].toInt() }
+                    else -> {
+                        println(wrongInput)
+                        askForWidth() }
+                }
+            }
+            fun askForHeight() {
+                print("Height > How tall playfield do you want : ")
+                input = readLine()!!.split(" ")
+                when {
+                    isN(input[0]) -> { height = input[0].toInt() }
+                    else -> {
+                        println(wrongInput)
+                        askForHeight() }
+                }
+            }
+            fun askForBiggerVisual() {
+                print(  "╬═════╬═════╬\n" +
+                        "║     ║  M  ║\n" +
+                        "╬═════╬═════╬\n" +
+                        "║  ?  ║  X  ║\n" +
+                        "╬═════╬═════╬\n" +
+                        "Do you want to have bigger visual like that? Y / N : ")
+                input = readLine()!!.split(" ")
+                when {
+                    input[0].toLowerCase() == "y" -> {
+                        bigVisual = true
+                    }
+                    input[0].toLowerCase() == "n" -> {
+                        bigVisual = false
+                    }
+                    else -> {
+                        println(wrongInput)
+                        askForBiggerVisual() }
+                }
+            }
+            askForBiggerVisual()
+            askForMineSymb()
+            askForSafeCell()
+            askForUnrevealedCell()
+            askForMarkedCell()
+            askForWidth()
+            askForHeight()
+            askForMineNum()
+            startGame()
+        }
+
+        fun run() {
+            print(greetMes)
+            input = readLine()!!.split(" ")
+            when {
+                input[0].toLowerCase() == "exit" -> { status = "break" ; return}
+                input[0].toLowerCase() == "gg" -> {
+                    gameType = 1
+                    gg()
+                }
+                isN(input[0]) && gameType == 0 -> {
+                    minesNumber = if ( input[0].toInt() < height * width - 9 ) input[0].toInt() else height * width - 9
+                    startGame() }
+                else -> {
+                    println(wrongInput)
+                    run() }
+            }
+        }
+    }
+}
 
 class Cell(var visual: String, var isMine: Boolean, var isVisible: Boolean, var isMarked: Boolean, var isAvailabe: Boolean)
-class PlayField(val mineCell : String, val safeCell : String, val width: Int, val height: Int, val minesNumber : Int) {
-    val unrevealedCell = "."
+
+class PlayField(val mineCell : String, val safeCell : String, val width: Int, val height: Int,
+                val minesNumber : Int, val unrevealedCell : String, val markedCell : String,
+                val bigVisual : Boolean) {
     val playfieldSize = width * height
     var leftoverCells = playfieldSize
-    val markedCell = "*"
     var playField = Array(height) { Array(width) { Cell(safeCell, false, false, false, true)} }
     var markedMines = 0
-    val leftBorder = " │"
-    val rightBorder = "│"
-    val delim = "—"
+    val leftBorder = if (bigVisual) { "╬═════" } else " │"
+    val midBorder = "║"
+    val rightBorder =if (bigVisual) { "╬" } else "│"
+    val delim = if (bigVisual) { "═════" } else "—"
     val inputMistake = "Wrong command. You can use 'mine' and 'free' commands to set mine or free cell.\n" +
             "X_axis_number Y_axis_number command\n" +
             "Example : 1 1 free\n" +
@@ -36,7 +182,6 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         if (i + 1 < height) visibleAroundChecker(i + 1, j)
         if (i + 1 < height && j + 1 < width) visibleAroundChecker(i + 1, j + 1)
     }
-
     fun checkEverything() {
         for (y in playField.indices) {
             for (x in playField[y].indices) {
@@ -46,7 +191,6 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
             }
         }
     }
-
     fun countLeftOverCells() {
         var counter = 0
         for (y in playField.indices) {
@@ -58,7 +202,6 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         }
         leftoverCells = playfieldSize - counter
     }
-
     fun countMarkedMines() {
         var counter = 0
         for (y in playField.indices) {
@@ -70,7 +213,6 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         }
         markedMines = counter
     }
-
     fun commands(xWidth: Int, yHeight: Int, command: String) {
         val y = yHeight - 1
         val x = xWidth - 1
@@ -111,7 +253,9 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
             }
 
             }
-            "exit" -> { return }
+            "exit" -> {
+                MINESOPERATING.status = "break"
+                return }
             else -> {
                 println(inputMistake)
                 operate()
@@ -119,20 +263,18 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         }
         winCondition(0)
     }
-
     fun winCondition(cheat: Int) {
         if (markedMines == minesNumber || leftoverCells == minesNumber) {
             printField()
             println("Congratulations! You found all the mines!")
-            return
+            MINESOPERATING.status = "break"
         } else if (cheat == 1) {
-            printRose()
+            if (width >= 9 && height >= 9)printRose()
             printField()
-            println("Sladkii zayc ti! Bulik.")
-            return
+            println("Sladkii zayc ti! Bulik :D.")
+            MINESOPERATING.status = "break"
         } else { printField() ; operate() }
     }
-
     fun randomizeBoard(i: Int, j: Int) {
         if (i - 1 >= 0 && j - 1 >= 0)       playField[i - 1][j - 1].isAvailabe = false
         if (i - 1 >= 0)                     playField[i - 1][j].isAvailabe = false
@@ -144,7 +286,7 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         if (i + 1 < height && j + 1 < width) playField[i + 1][j + 1].isAvailabe = false
         var minesCounter = 0
         while (minesCounter < minesNumber) {
-            val rndmY = Random.nextInt(width)
+            val rndmY = Random.nextInt(height)
             val rndmX = Random.nextInt(width)
             if (!playField[rndmY][rndmX].isMine && !playField[rndmY][rndmX].isVisible && playField[rndmY][rndmX].isAvailabe) {
                 playField[rndmY][rndmX].isMine = true
@@ -154,7 +296,6 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
             }
 
         } }
-
     fun setMinesNumbersOnTheField () {
         fun getNumberOfMines(pos: Point): Int {
             var mines = 0
@@ -183,12 +324,27 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
     }
 
     fun printField() {
+        val bigVisTopLine = " " + delim + (rightBorder + delim).repeat(width) + rightBorder
+        val bigVisBorderLine = "      " + midBorder + ("     $midBorder").repeat(width)
         fun firstLine() {
-            print(leftBorder)
+            if (bigVisual) {
+                print(bigVisBorderLine)
+                print("\n      ")
+            } else print(leftBorder)
             for (i in 1..width) {
-                print("$i")
+                if (bigVisual) {
+                    print(if (i in 10..99) {"$midBorder  $i "} else {"$midBorder  $i  "})
+                } else { print("$i")}
             }
-            println(rightBorder)
+            if (bigVisual) {
+                print(midBorder)
+                print("\n")
+                print(bigVisTopLine)
+                print("\n")
+            } else {
+                print(rightBorder)
+                println()
+            }
         }
         fun borderLine() {
             print(leftBorder)
@@ -199,17 +355,27 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         }
         println()
         firstLine()
-        borderLine()
+        if (!bigVisual) borderLine()
         for (y in playField.indices) {
-            print("${y + 1}│")
+            if (bigVisual) print(if (y + 1 in 10..99) { "   ${y + 1} $midBorder" } else "   ${y + 1}  $midBorder" ) else print("${y + 1}│")  // col numbers
             for (x in playField[y].indices) {
-                if (playField[y][x].isVisible) print(playField[y][x].visual)
-                if (playField[y][x].isMarked) print(markedCell)
-                if (!playField[y][x].isVisible && !playField[y][x].isMarked) print(unrevealedCell)
+                if (bigVisual) {
+                    if(playField[y][x].isVisible) print("  ${playField[y][x].visual}  $midBorder")
+                    if (playField[y][x].isMarked) print("  $markedCell  $midBorder")
+                    if (!playField[y][x].isVisible && !playField[y][x].isMarked) print("  $unrevealedCell  $midBorder")
+                } else {
+                    if(playField[y][x].isVisible) print(playField[y][x].visual)
+                    if (playField[y][x].isMarked) print(markedCell)
+                    if (!playField[y][x].isVisible && !playField[y][x].isMarked) print(unrevealedCell)
+                }
             }
-            println(rightBorder)
+            if (bigVisual) {
+                print("\n")
+                print(bigVisTopLine)
+                print("\n")
+            } else println(rightBorder)
         }
-        borderLine()
+        if (!bigVisual) borderLine()
     }
 
     fun operate() {
@@ -219,6 +385,7 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
             println("Hello, Bula!")
             easter()
         } else if (line[0].toLowerCase() == "exit") {
+            MINESOPERATING.status = "break"
             return
         } else if (line[0].matches("-?\\d+(\\.\\d+)?".toRegex()) && line[1].matches("-?\\d+(\\.\\d+)?".toRegex())/* && (line[2].toLowerCase() == "free" || line[2].toLowerCase() == "mine")*/) {
             commands(line[0].toInt(), line[1].toInt(), line[2])
@@ -246,7 +413,9 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
             "surprise" -> {}
             "motherlode" -> {winCondition(1)}
             "howbigislove" -> { }
-            "exit" -> { return }
+            "exit" -> {
+                MINESOPERATING.status = "break"
+                return }
             "back" -> { printField()
                 operate() }
             else -> { print("Wrong command, but...\n")
@@ -303,20 +472,9 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
 }
 
 fun main(args : Array<String>) {
-    val greetMes = "How many mines do you want on the field? "
-    print(greetMes)
-    var input = readLine()!!
-    val mine = "X"
-    val safe = "-"
-    val height = 9  // won't scale if more than 9
-    val width = 9   // won't scale if more than 9
-    while (!input.matches("-?\\d+(\\.\\d+)?".toRegex())) {
-        print("Try again!\n"); print(greetMes)
-        input = readLine()!!
-    }
-    if (input.matches("-?\\d+(\\.\\d+)?".toRegex())) {
-        val minesNumber = if ( input!!.toInt() < height * width ) input!!.toInt() else height * width - 1
-        val nf = PlayField(mine, safe, width, height, minesNumber)
-        nf.start()
+    //val greetMes = "How many mines do you want on the field? "
+    //print(greetMes)
+    while (MINESOPERATING.status == "running") {
+        MINESOPERATING.run()
     }
 }
