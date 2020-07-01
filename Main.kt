@@ -48,10 +48,11 @@ enum class MINESOPERATING() {;  // used to handle main menu and choose default v
                 }
             }
             fun askForSafeCell() {
-                print("What symbol do u want to use as SafeCell Symbol: ")
+                print("What symbol do u want to use as SafeCell Symbol. Type \"space\" for empty space: ")
                 input = readLine()!!.split(" ")
                 when {
-                    input[0].length == 1 -> { safe = input[0]}
+                    input[0].length == 1 -> { safe = input[0] }
+                    input[0].toLowerCase() == "space" -> { safe = " " }
                     else -> {
                         println(wrongInput)
                         askForSafeCell() }
@@ -387,7 +388,7 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         } else if (line[0].toLowerCase() == "exit") {
             MINESOPERATING.status = "break"
             return
-        } else if (line[0].matches("-?\\d+(\\.\\d+)?".toRegex()) && line[1].matches("-?\\d+(\\.\\d+)?".toRegex())/* && (line[2].toLowerCase() == "free" || line[2].toLowerCase() == "mine")*/) {
+        } else if (line.size == 3 && line[0].matches("-?\\d+(\\.\\d+)?".toRegex()) && line[1].matches("-?\\d+(\\.\\d+)?".toRegex())/* && (line[2].toLowerCase() == "free" || line[2].toLowerCase() == "mine")*/) {
             commands(line[0].toInt(), line[1].toInt(), line[2])
         } else {
             println(inputMistake)
@@ -411,7 +412,7 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
         when (easterinput) {
             "compliment" -> {}
             "surprise" -> {}
-            "motherlode" -> {winCondition(1)}
+            "motherlode" -> { winCondition(1) }
             "howbigislove" -> { }
             "exit" -> {
                 MINESOPERATING.status = "break"
@@ -472,8 +473,6 @@ class PlayField(val mineCell : String, val safeCell : String, val width: Int, va
 }
 
 fun main(args : Array<String>) {
-    //val greetMes = "How many mines do you want on the field? "
-    //print(greetMes)
     while (MINESOPERATING.status == "running") {
         MINESOPERATING.run()
     }
